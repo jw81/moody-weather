@@ -1,0 +1,14 @@
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - "8080:8080"
+    command: ["./main"]
+
+  test:
+    build:
+      context: .
+    command: ["go", "test", "./..."]
+    volumes:
+      - .:/app    
