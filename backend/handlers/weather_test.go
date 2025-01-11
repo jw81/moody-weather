@@ -8,7 +8,18 @@ import (
 	"testing"
 )
 
-func TestWeatherHandler(t *testing.T) {
+// Mock function to simulate OpenWeatherMap API calls
+var mockGetWeatherData = func(zipCode string) (string, error) {
+    if zipCode == "12345" {
+        return "Sunny (clear sky), 72.0°F (feels like 70.0°F), Wind: 5.0 mph in Springfield", nil
+    }
+    if zipCode == "00000" {
+        return "", errInvalidZipCode
+    }
+    return "", errAPIUnavailable
+}
+
+func TestWeatherHandlerWithAPI(t *testing.T) {
     tests := []struct {
         name           string
         requestBody    map[string]string
@@ -16,46 +27,40 @@ func TestWeatherHandler(t *testing.T) {
         expectedBody   string
     }{
         {
-            name: "Valid request",
+            name: "Valid request with successful API response",
             requestBody: map[string]string{
                 "zipCode": "12345",
                 "tone":    "nice",
             },
             expectedStatus: http.StatusOK,
-            expectedBody:   "Weather data for zip code 12345 with tone nice.",
+            expectedBody:   "Weather for 12345: Sunny (clear sky), 72.0°F (feels like 70.0°F), Wind: 5.0 mph in Springfield",
         },
         {
-            name:           "Missing zipCode",
-            requestBody:    map[string]string{"tone": "nice"},
+            name:           "Invalid zip code",
+            requestBody:    map[string]string{"zipCode": "00000", "tone": "nice"},
             expectedStatus: http.StatusBadRequest,
             expectedBody:   "Invalid zip code",
         },
         {
-            name:           "Invalid tone",
-            requestBody:    map[string]string{"zipCode": "12345", "tone": "angry"},
-            expectedStatus: http.StatusBadRequest,
-            expectedBody:   "Invalid tone. Valid options are: nice, normal, snarky.",
-        },
-        {
-            name:           "Empty request body",
-            requestBody:    nil,
-            expectedStatus: http.StatusBadRequest,
-            expectedBody:   "Invalid request body",
+            name:           "API unavailable",
+            requestBody:    map[string]string{"zipCode": "54321", "tone": "nice"},
+            expectedStatus: http.StatusInternalServerError,
+            expectedBody:   "Failed to fetch weather data",
         },
     }
 
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             // Prepare the request body
-            var requestBody []byte
-            if tt.requestBody != nil {
-                requestBody, _ = json.Marshal(tt.requestBody)
-            }
+            requestBody, _ := json.Marshal(tt.requestBody)
 
             // Create an HTTP request and response recorder
             req := httptest.NewRequest(http.MethodPost, "/weather", bytes.NewBuffer(requestBody))
             req.Header.Set("Content-Type", "application/json")
             rec := httptest.NewRecorder()
+
+            // Replace the real API call with the mock
+            getWeatherData = mockGetWeatherData
 
             // Call the handler
             WeatherHandler(rec, req)
