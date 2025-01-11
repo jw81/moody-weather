@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/jw81/moody-weather/backend/services"
 )
 
 // Mock function to simulate OpenWeatherMap API calls
@@ -14,12 +16,12 @@ var mockGetWeatherData = func(zipCode string) (string, error) {
         return "Sunny (clear sky), 72.0°F (feels like 70.0°F), Wind: 5.0 mph in Springfield", nil
     }
     if zipCode == "00000" {
-        return "", errInvalidZipCode
+        return "", services.ErrInvalidZipCode
     }
-    return "", errAPIUnavailable
+    return "", services.ErrAPIUnavailable
 }
 
-func TestWeatherHandlerWithAPI(t *testing.T) {
+func TestWeatherHandler(t *testing.T) {
     tests := []struct {
         name           string
         requestBody    map[string]string
@@ -51,21 +53,12 @@ func TestWeatherHandlerWithAPI(t *testing.T) {
 
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
-            // Prepare the request body
             requestBody, _ := json.Marshal(tt.requestBody)
-
-            // Create an HTTP request and response recorder
             req := httptest.NewRequest(http.MethodPost, "/weather", bytes.NewBuffer(requestBody))
             req.Header.Set("Content-Type", "application/json")
             rec := httptest.NewRecorder()
+            WeatherHandler(mockGetWeatherData, rec, req)
 
-            // Replace the real API call with the mock
-            getWeatherData = mockGetWeatherData
-
-            // Call the handler
-            WeatherHandler(rec, req)
-
-            // Validate the response
             res := rec.Result()
             defer res.Body.Close()
 

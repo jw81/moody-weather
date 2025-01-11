@@ -11,6 +11,8 @@ services:
   test:
     build:
       context: .
-    command: ["go", "test", "./..."]
+    command: ["go", "test", "-v", "./..."]
     volumes:
       - .:/app    
+    environment:
+      OPENWEATHERMAP_API_KEY: "mock-api-key"      
