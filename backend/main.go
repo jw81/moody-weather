@@ -10,7 +10,7 @@ import (
 
 func main() {
     http.HandleFunc("/weather", func(w http.ResponseWriter, r *http.Request) {
-        handlers.WeatherHandler(services.GetWeatherData, w, r)
+        handlers.WeatherHandler(services.GetWeatherData, services.GetOpenAIResponse, w, r)
     })    
     fmt.Println("Starting server on :8080")
     http.ListenAndServe(":8080", nil)

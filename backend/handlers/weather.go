@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/jw81/moody-weather/backend/services"
@@ -19,8 +18,12 @@ type WeatherResponse struct {
     Message string `json:"message"`
 }
 
-// WeatherHandler handles incoming weather requests
-func WeatherHandler(getWeatherData func(string) (string, error), responseWriter http.ResponseWriter, request *http.Request) {
+func WeatherHandler(
+    getWeatherData func(string) (string, error),
+    getOpenAIResponse func(string, string) (string, error),
+    responseWriter http.ResponseWriter,
+    request *http.Request,
+) {
     if request.Method != http.MethodPost {
         http.Error(responseWriter, "Invalid request method", http.StatusMethodNotAllowed)
         return
@@ -52,8 +55,14 @@ func WeatherHandler(getWeatherData func(string) (string, error), responseWriter 
         return
     }
 
+    openAIResponse, err := getOpenAIResponse(weatherData, weatherRequest.Tone)
+    if err != nil {
+        http.Error(responseWriter, "Failed to generate response", http.StatusInternalServerError)
+        return
+    }
+
     response := WeatherResponse{
-        Message: fmt.Sprintf("Weather for %s: %s", weatherRequest.ZipCode, weatherData),
+        Message: openAIResponse,
     }
 
     responseWriter.Header().Set("Content-Type", "application/json")

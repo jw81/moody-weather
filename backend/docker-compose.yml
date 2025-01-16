@@ -15,4 +15,5 @@ services:
     volumes:
       - .:/app    
     environment:
-      OPENWEATHERMAP_API_KEY: "mock-api-key"      
+      OPENWEATHERMAP_API_KEY: "mock-api-key"
+      OPENAI_API_KEY: "mock-api-key"
